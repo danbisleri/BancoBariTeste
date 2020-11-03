@@ -22,26 +22,10 @@ namespace BancoBariConsumer
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMassTransit(collection =>
-            {
-                collection.AddConsumer<BariConsumer>();
-                collection.AddBus(provider => Bus.Factory.CreateUsingRabbitMq(config =>
-                {
-                    config.UseHealthCheck(provider);
-                    config.Host(new Uri(@"rabbitmq://127.0.0.1"), h =>
-                    {
-                        h.Username("guest");
-                        h.Password("guest");
-                    });
-                    config.ReceiveEndpoint("bariQueue", ep =>
-                    {
-                        ep.PrefetchCount = 16;
-                        ep.UseMessageRetry(r => r.Interval(2, 100));
-                        ep.ConfigureConsumer<BariConsumer>(provider);
-                    });
-                }));
-            });
-            services.AddMassTransitHostedService();
+            services.AddTransient<IBariConsumer, BariConsumer>();
+            services.AddHostedService<BackgroundServices>();
+
+            services.AddCors();
             services.AddControllersWithViews();
         }
 

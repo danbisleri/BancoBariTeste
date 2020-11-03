@@ -1,4 +1,5 @@
 using System;
+using AutoMapper;
 using BancoBariSender.Models;
 using MassTransit;
 using Microsoft.AspNetCore.Builder;
@@ -21,22 +22,9 @@ namespace BancoBari
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMassTransit(collection =>
-            {
-                collection.AddBus(provider => Bus.Factory.CreateUsingRabbitMq(config =>
-                {
-                    config.UseHealthCheck(provider);
-                    config.Host(new Uri(@"rabbitmq://127.0.0.1"), h =>
-                    {
-                        h.Username("guest");
-                        h.Password("guest");
-                    });
-                }));
+            services.AddTransient<IBariQueue, BariQueue>();
+            services.AddHostedService<BackgroundServices>();
 
-                services.AddSingleton<IHostedService, BariQueue>();
-                services.AddDistributedMemoryCache();
-            });
-            services.AddMassTransitHostedService();
             services.AddControllersWithViews();
         }
 

@@ -1,47 +1,67 @@
 ﻿using Common;
 using MassTransit;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace BancoBariSender.Models
 {
 
-    public class BariQueue: BackgroundService
+    public class BariQueue : IBariQueue
     {
-        private readonly ILogger<BariQueue> _logger;
-        private readonly IBus _eventBus;
+        private readonly IConfiguration _configuration;
 
-        public BariQueue(ILogger<BariQueue> logger, IBus eventBus)
+        
+        public BariQueue(IConfiguration configuration)
         {
-            _logger = logger;
-            _eventBus = eventBus;
+            _configuration = configuration;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+
+        public void AddQueue()
         {
-            List<Message> listMessage = new List<Message>();
+            var host = _configuration.GetSection("QueueHost").Value;
+            var factory = new ConnectionFactory() { HostName = host, 
+                                                    UserName="guest", 
+                                                    Password="guest",
+                                                    Port = AmqpTcpEndpoint.UseDefaultPort 
+                                                  };
 
-            while (true)
+            using (var connection = factory.CreateConnection())
             {
-                Message message = new Message(_eventBus.Address.ToString(), "Hello World!");
+                using (var channel = connection.CreateModel())
+                {
+                    channel.QueueDeclare(queue: "bariQueue",
+                        durable: false,
+                        exclusive: false,
+                        autoDelete: false,
+                        arguments: null
+                        );
 
-                Uri uri = new Uri("rabbitmq://127.0.0.1/bariQueue");
+                    Message message = new Message(Dns.GetHostName(), "Hello World!");
 
-                var endPoint = await _eventBus.GetSendEndpoint(uri);
+                    var body = Encoding.UTF8.GetBytes(
+                        JsonConvert.SerializeObject(
+                            message
+                            ));
 
-                _logger.LogInformation($"[x] Mensagem enviada [x] \n {JsonConvert.SerializeObject(message)}");
-
-                await endPoint.Send(message);
-
-                await Task.Delay(5000, stoppingToken);
-
-                
+                    channel.BasicPublish(exchange: "",
+                        routingKey: "bariQueue",
+                        basicProperties: null,
+                        body: body
+                        );
+                }
+                connection.Close();
             }
+            
         }
     }
 }
