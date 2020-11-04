@@ -22,6 +22,12 @@ namespace BancoBari
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+
+            // Para este exemplo foi criado um container Docker baseado
+            // em uma imagem do RabbitMQ. Segue o comando para geração
+            // desta estrutura:
+            // docker run -it --rm --name rabbitmq --hostname rabbit-local -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+
             services.AddTransient<IBariQueue, BariQueue>();
             services.AddHostedService<BackgroundServices>();
 
