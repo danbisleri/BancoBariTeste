@@ -1,7 +1,9 @@
-﻿namespace BancoBariSender.Models
+﻿using Common;
+
+namespace BancoBariSender.Models
 {
     public interface IBariQueue
     {
-        void AddQueue();
+        void AddQueue(Message message = null);
     }
 }

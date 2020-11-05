@@ -18,7 +18,6 @@ namespace BancoBariSender.Models
     public class BariQueue : IBariQueue
     {
         private readonly IConfiguration _configuration;
-
         
         public BariQueue(IConfiguration configuration)
         {
@@ -26,40 +25,51 @@ namespace BancoBariSender.Models
         }
 
 
-        public void AddQueue()
+        public void AddQueue(Message message = null)
         {
-            var host = _configuration.GetSection("QueueHost").Value;
-            var factory = new ConnectionFactory() { HostName = host, 
-                                                    UserName="guest", 
-                                                    Password="guest",
-                                                    Port = AmqpTcpEndpoint.UseDefaultPort 
-                                                  };
-
-            using (var connection = factory.CreateConnection())
+            try
             {
-                using (var channel = connection.CreateModel())
+                if(message == null)
+                    message = new Message(Dns.GetHostName(), "Hello World!");
+
+                var host = _configuration.GetSection("QueueHost").Value;
+                var factory = new ConnectionFactory()
                 {
-                    channel.QueueDeclare(queue: "bariQueue",
-                        durable: false,
-                        exclusive: false,
-                        autoDelete: false,
-                        arguments: null
-                        );
+                    HostName = host,
+                    UserName = "guest",
+                    Password = "guest",
+                    RequestedHeartbeat = TimeSpan.FromMinutes(3),
+                    Port = AmqpTcpEndpoint.UseDefaultPort
+                };
 
-                    Message message = new Message(Dns.GetHostName(), "Hello World!");
+                using (var connection = factory.CreateConnection())
+                {
+                    using (var channel = connection.CreateModel())
+                    {
+                        channel.QueueDeclare(queue: "bariQueue",
+                            durable: false,
+                            exclusive: false,
+                            autoDelete: false,
+                            arguments: null
+                            );
 
-                    var body = Encoding.UTF8.GetBytes(
-                        JsonConvert.SerializeObject(
-                            message
-                            ));
+                        var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message));
 
-                    channel.BasicPublish(exchange: "",
-                        routingKey: "bariQueue",
-                        basicProperties: null,
-                        body: body
-                        );
+                        channel.BasicPublish(exchange: "",
+                            routingKey: "bariQueue",
+                            basicProperties: null,
+                            body: body
+                            );
+
+                        MessageListModel.AddInList(message);
+                    }
+                    connection.Close();
                 }
-                connection.Close();
+            }
+            catch (Exception e)
+            {
+                throw new Exception(e.Message);
+                //AddQueue();
             }
             
         }

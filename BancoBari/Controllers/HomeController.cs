@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace BancoBari.Controllers
@@ -20,7 +21,11 @@ namespace BancoBari.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            var result = new List<Message>();
+
+            result = MessageListModel.GetListMessage().OrderByDescending(x => x.DataEnvio).ToList();
+
+            return View(result);
         }
     }
 }

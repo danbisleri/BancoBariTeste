@@ -1,8 +1,39 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model List<Common.Message>
+@{
+    ViewData["Title"] = "Sender";
 }
+<script>
+
+    function timedRefresh(timeoutPeriod) {
+        setTimeout("location.reload(true);", timeoutPeriod);
+    }
+
+    window.onload = timedRefresh(5000);
+
+</script>
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">Sender</h1>
 </div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Host</th>
+            <th>Message</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td>@item.Host </td>
+                <td>@item.Description</td>
+                <td>@item.DataEnvio</td>
+            </tr>
+        }
+    </tbody>
+</table>

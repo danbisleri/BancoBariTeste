@@ -1,6 +1,7 @@
 ﻿using Common;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -22,9 +23,9 @@ namespace BancoBariConsumer.Models
         }
         public void Consumer()
         {
-            var host = _configuration.GetSection("QueueHost").Value;
             try
             {
+                var host = _configuration.GetSection("QueueHost").Value;
                 var factory = new ConnectionFactory()
                 {
                     HostName = host,
@@ -56,7 +57,9 @@ namespace BancoBariConsumer.Models
                             {
                                 var body = ea.Body.ToArray();
                                 message = Encoding.UTF8.GetString(body);
-                                //obj = JsonConvert.DeserializeObject<Message>(message);
+                                var obj = JsonConvert.DeserializeObject<Message>(message);
+
+                                MessageListModel.AddInList(obj);
                             };
 
                             channel.BasicConsume(queue: "bariQueue",
@@ -68,9 +71,10 @@ namespace BancoBariConsumer.Models
                     connection.Close();
                 }
             }
-            catch
+            catch(Exception e)
             {
-
+                throw new Exception(e.Message);
+                //Consumer();
             }
         }
 
